@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Carp ();
 
-$Test::Mock::Cmd::VERSION = '0.1';
+$Test::Mock::Cmd::VERSION = '0.2';
 
 sub import {
     if ( @_ == 4 ) {
@@ -62,7 +62,7 @@ Test::Mock::Cmd - Mock system(), exec(), and qx() for testing
 
 =head1 VERSION
 
-This document describes Test::Mock::Cmd version 0.1
+This document describes Test::Mock::Cmd version 0.2
 
 =head1 SYNOPSIS
 
@@ -106,7 +106,7 @@ Per the synopsis, you can provide import() with 1 code reference to replace all 
 
 =head3 Caveat
 
-Any code loaded before the mock functions are setup will retain normal syatme(), etc behavior. (even if the system() does not happen until much later!)
+Any code loaded before the mock functions are setup will retain normal system(), etc behavior. (even if the system() does not happen until much later!)
 
    use X; # has functions that call system()
    use Test::Mock::Cmd ...
@@ -116,13 +116,13 @@ Any code loaded before the mock functions are setup will retain normal syatme(),
 
 =head2 Getting access to the original, un-mocked, functionality.
 
-Non of these are exportable.
+None of these are exportable.
 
 =over 
 
 =item Test::Mock::Cmd::orig_system()
 
-Original, not-mocked L<perlfunc/system>
+Original, not-mocked L<perlfunc/system_LIST>
 
 =item Test::Mock::Cmd::orig_exec()
 
