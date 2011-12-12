@@ -4,9 +4,29 @@ use strict;
 use warnings;
 use Carp ();
 
-$Test::Mock::Cmd::VERSION = '0.2';
+$Test::Mock::Cmd::VERSION = '0.3';
 
 sub import {
+    if ( @_ == 3 || @_ == 5 || @_ == 7 ) {
+        my ( $class, %override ) = @_;
+
+        for my $k ( keys %override ) {
+            if ( $k ne 'system' && $k ne 'exec' && $k ne 'qr' ) {
+                Carp::croak('Key is not system, exec, or qr');
+            }
+            if ( ref( $override{$k} ) ne 'CODE' ) {
+                Carp::croak('Not a CODE reference');
+            }
+        }
+
+        no warnings 'redefine';
+        *CORE::GLOBAL::system   = $override{'system'} if $override{'system'};
+        *CORE::GLOBAL::exec     = $override{'exec'}   if $override{'exec'};
+        *CORE::GLOBAL::readpipe = $override{'qr'}     if $override{'qr'};
+
+        return 1;
+    }
+
     if ( @_ == 4 ) {
         Carp::croak('Not a CODE reference') if ref( $_[1] ) ne 'CODE' || ref( $_[2] ) ne 'CODE' || ref( $_[3] ) ne 'CODE';
     }
@@ -14,7 +34,7 @@ sub import {
         Carp::croak('Not a CODE reference') if ref( $_[1] ) ne 'CODE';
     }
     else {
-        Carp::croak( __PACKAGE__ . '->import() requires 1 or 3 code references as arguments' );
+        Carp::croak( __PACKAGE__ . '->import() requires a hash, 1 code reference, or 3 code references as arguments' );
     }
 
     no warnings 'redefine';
@@ -62,9 +82,13 @@ Test::Mock::Cmd - Mock system(), exec(), and qx() for testing
 
 =head1 VERSION
 
-This document describes Test::Mock::Cmd version 0.2
+This document describes Test::Mock::Cmd version 0.3
 
 =head1 SYNOPSIS
+
+    use Test::Mock::Cmd 'system' => \&my_cmd_mocker, 'qr' => \&my_cmd_mocker;
+
+or
 
     use Test::Mock::Cmd \&my_cmd_mocker;
 
@@ -102,7 +126,7 @@ etc etc
 
 =head2 Commence mocking
 
-Per the synopsis, you can provide import() with 1 code reference to replace all 3 functions or 3 code references to replace system(), exec(), and qx() (in that order).
+Per the synopsis, you can provide import() with a hash whose keys are 'system', 'exec', or 'qr' and whose values are the code reference you want to replace the key's functionality with, 1 code reference to replace all 3 functions or 3 code references to replace system(), exec(), and qx() (in that order).
 
 =head3 Caveat
 
@@ -140,9 +164,13 @@ Original, not-mocked L<perlfunc/readpipe>
 
 =item C<< Not a CODE reference >>
 
-The given argument is not a code reference and should be.
+The given value is not a code reference and should be.
 
-=item C<< Test::Mock::Cmd->import() requires 1 or 3 code references as arguments >>
+=item C<< Key is not system, exec, or qr >>
+
+A key in your argument hash is invalid.
+
+=item C<< Test::Mock::Cmd->import() requires a hash, 1 code reference, or 3 code references as arguments >>
 
 You are not passing in the required one or three arguments.
 

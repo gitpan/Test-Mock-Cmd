@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Test-Mock-Cmd
-version:            0.2
+version:            0.3
 abstract:           Mock system(), exec(), and qx() for testing
 author:
     - Daniel Muey <http://drmuey.com/cpan_contact.pl>
