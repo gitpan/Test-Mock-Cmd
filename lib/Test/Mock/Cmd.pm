@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Carp ();
 
-$Test::Mock::Cmd::VERSION = '0.4';
+$Test::Mock::Cmd::VERSION = '0.5';
 
 sub import {
     if ( @_ == 3 || @_ == 5 || @_ == 7 ) {
@@ -82,7 +82,7 @@ Test::Mock::Cmd - Mock system(), exec(), and qx() for testing
 
 =head1 VERSION
 
-This document describes Test::Mock::Cmd version 0.4
+This document describes Test::Mock::Cmd version 0.5
 
 =head1 SYNOPSIS
 
