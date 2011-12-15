@@ -24,3 +24,13 @@ sub i_call_backticks {
 }
 
 1;
+
+__END__
+
+=head1 LICENCE AND COPYRIGHT
+
+Copyright (c) 2011 cPanel, Inc. C<< <copyright@cpanel.net>> >>. All rights reserved.
+
+This library is free software; you can redistribute it and/or modify it under 
+the same terms as Perl itself, either Perl version 5.10.1 or, at your option, 
+any later version of Perl 5 you may have available.

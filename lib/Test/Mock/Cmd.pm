@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Carp ();
 
-$Test::Mock::Cmd::VERSION = '0.3';
+$Test::Mock::Cmd::VERSION = '0.4';
 
 sub import {
     if ( @_ == 3 || @_ == 5 || @_ == 7 ) {
@@ -82,7 +82,7 @@ Test::Mock::Cmd - Mock system(), exec(), and qx() for testing
 
 =head1 VERSION
 
-This document describes Test::Mock::Cmd version 0.3
+This document describes Test::Mock::Cmd version 0.4
 
 =head1 SYNOPSIS
 
@@ -206,10 +206,11 @@ Daniel Muey  C<< <http://drmuey.com/cpan_contact.pl> >>
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright (c) 2011, Daniel Muey C<< <http://drmuey.com/cpan_contact.pl> >>. All rights reserved.
+Copyright (c) 2011 cPanel, Inc. C<< <copyright@cpanel.net>> >>. All rights reserved.
 
-This module is free software; you can redistribute it and/or
-modify it under the same terms as Perl itself. See L<perlartistic>.
+This library is free software; you can redistribute it and/or modify it under 
+the same terms as Perl itself, either Perl version 5.10.1 or, at your option, 
+any later version of Perl 5 you may have available.
 
 =head1 DISCLAIMER OF WARRANTY
 
