@@ -14,7 +14,7 @@ BEGIN {
         like( $array[0], qr/qx array/,  'qx array before mocking' );
 
         my $scalara = `/bin/echo back ticks scalar`;
-        my @arraya = `/bin/echo back ticks array`;
+        my @arraya  = `/bin/echo back ticks array`;
         like( $scalara,   qr/back ticks scalar/, 'back ticks scalar before mocking' );
         like( $arraya[0], qr/back ticks array/,  'back ticks array before mocking' );
 

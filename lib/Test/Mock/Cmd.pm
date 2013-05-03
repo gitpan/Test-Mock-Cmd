@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Carp ();
 
-$Test::Mock::Cmd::VERSION = '0.5';
+$Test::Mock::Cmd::VERSION = '0.6';
 
 sub import {
     if ( @_ == 3 || @_ == 5 || @_ == 7 ) {
@@ -14,33 +14,35 @@ sub import {
             if ( $k ne 'system' && $k ne 'exec' && $k ne 'qr' ) {
                 Carp::croak('Key is not system, exec, or qr');
             }
-            if ( ref( $override{$k} ) ne 'CODE' ) {
-                Carp::croak('Not a CODE reference');
+            if ( ref( $override{$k} ) ne 'CODE' && ref( $override{$k} ) ne 'HASH' ) {
+                Carp::croak('Not a CODE or HASH reference');
             }
         }
 
         no warnings 'redefine';
-        *CORE::GLOBAL::system   = $override{'system'} if $override{'system'};
-        *CORE::GLOBAL::exec     = $override{'exec'}   if $override{'exec'};
-        *CORE::GLOBAL::readpipe = $override{'qr'}     if $override{'qr'};
+        *CORE::GLOBAL::system   = _transmogrify_to_code( $override{'system'}, \&orig_system ) if $override{'system'};
+        *CORE::GLOBAL::exec     = _transmogrify_to_code( $override{'exec'},   \&orig_exec )   if $override{'exec'};
+        *CORE::GLOBAL::readpipe = _transmogrify_to_code( $override{'qr'},     \&orig_qr )     if $override{'qr'};
 
         return 1;
     }
 
     if ( @_ == 4 ) {
-        Carp::croak('Not a CODE reference') if ref( $_[1] ) ne 'CODE' || ref( $_[2] ) ne 'CODE' || ref( $_[3] ) ne 'CODE';
+        for my $idx ( 1 .. 3 ) {
+            Carp::croak('Not a CODE or HASH reference') if ref( $_[$idx] ) ne 'CODE' && ref( $_[$idx] ) ne 'HASH';
+        }
     }
     elsif ( @_ == 2 ) {
-        Carp::croak('Not a CODE reference') if ref( $_[1] ) ne 'CODE';
+        Carp::croak('Not a CODE or HASH reference') if ref( $_[1] ) ne 'CODE' and ref( $_[1] ) ne 'HASH';
     }
     else {
-        Carp::croak( __PACKAGE__ . '->import() requires a hash, 1 code reference, or 3 code references as arguments' );
+        Carp::croak( __PACKAGE__ . '->import() requires a 1-3 key hash, 1 code/hash reference, or 3 code/hash references as arguments' );
     }
 
     no warnings 'redefine';
-    *CORE::GLOBAL::system   = $_[1];
-    *CORE::GLOBAL::exec     = $_[2] || $_[1];
-    *CORE::GLOBAL::readpipe = $_[3] || $_[1];
+    *CORE::GLOBAL::system = _transmogrify_to_code( $_[1], \&orig_system );
+    *CORE::GLOBAL::exec     = _transmogrify_to_code( $_[2] || $_[1], \&orig_exec );
+    *CORE::GLOBAL::readpipe = _transmogrify_to_code( $_[3] || $_[1], \&orig_qr );
 }
 
 # This doesn't make sense w/ the once-set-always-set behavior of these functions and it's just weird so we leave it out for now.
@@ -70,6 +72,20 @@ sub orig_qx {
     return CORE::readpipe( $_[0] );    # we use $_[0] because @_ results in something like 'sh: *main::_: command not found'
 }
 
+sub _transmogrify_to_code {
+    my ( $val, $orig ) = @_;
+    return $val if ref($val) eq 'CODE';
+
+    return sub {
+        if ( exists $val->{ $_[0] } ) {
+            return $val->{ $_[0] }->(@_);
+        }
+        else {
+            goto &$orig;
+        }
+    };
+}
+
 1;
 
 __END__
@@ -82,7 +98,7 @@ Test::Mock::Cmd - Mock system(), exec(), and qx() for testing
 
 =head1 VERSION
 
-This document describes Test::Mock::Cmd version 0.5
+This document describes Test::Mock::Cmd version 0.6
 
 =head1 SYNOPSIS
 
@@ -95,6 +111,56 @@ or
 or
 
     use Test::Mock::Cmd \&my_mock_system, \&my_mock_exec, \&my_mock_qx;
+
+or
+
+    use Test::Mock::Cmd 'system' => { … }, 'qr' =>  { … }; # can mix and match hash ref and code ref
+
+or
+
+    use Test::Mock::Cmd { … };
+
+or
+
+    use Test::Mock::Cmd { … }, { … }, { … }; # can mix and match hash ref and code ref
+
+Typical testing usage example:
+
+    use Test::More;
+
+    our $current_system = sub { diag( explain( \@_ ) ); return 0; };
+    use Test::Mock::Cmd 'system' => sub { $current_system->(@_) };
+
+    use Foo;
+
+    …
+
+    {
+        my $sys;
+        local $current_system = sub { $sys = \@_ };
+        
+        foo(1);
+        is($sys, undef, 'foo() does not call system w/ true arg');
+        
+        $sys = undef; # just in case
+        foo();
+        isnt($sys, undef, 'foo() calls system by default');
+        is_deeply($sys, [qw(/bin/chibby -wibby foo)], 'foo() calls system with expected args);
+    }
+
+    {
+        local $current_system = sub { return 0 };
+        ok foo(), 'foo() returns true when system() works';
+    }
+
+    {
+        local $current_system = sub { return 1 };
+        ok !foo(), 'foo() returns false when system() fails';
+    }
+
+    …
+
+    done_testing;
 
 =head1 DESCRIPTION
 
@@ -118,6 +184,10 @@ test that the arguments that will be passed to a system command are correct
 
 =item 4
 
+simulate that really hard to reproduce low level edge case to make sure your code works correctly on affected systems
+
+=item 5
+
 etc etc
 
 =back 
@@ -127,6 +197,14 @@ etc etc
 =head2 Commence mocking
 
 Per the synopsis, you can provide import() with a hash whose keys are 'system', 'exec', or 'qr' and whose values are the code reference you want to replace the key's functionality with, 1 code reference to replace all 3 functions or 3 code references to replace system(), exec(), and qx() (in that order).
+
+As of v0.6 you can pass in a hash instead of a coderef that will generate a handler that defaults to the original call if the first argument given is not a key in said hash.
+
+    use Test::Mock::Cmd 'system' => {
+        'git' => sub { … },
+    };
+    system('git', …); # calls your function
+    system('whatever', …); # calls the original system
 
 =head3 Caveat
 
@@ -162,15 +240,15 @@ Original, not-mocked L<perlfunc/readpipe>
 
 =over 
 
-=item C<< Not a CODE reference >>
+=item C<< Not a CODE or HASH reference >>
 
-The given value is not a code reference and should be.
+The given value is not a code reference or a hash reference and should be one or the other.
 
 =item C<< Key is not system, exec, or qr >>
 
 A key in your argument hash is invalid.
 
-=item C<< Test::Mock::Cmd->import() requires a hash, 1 code reference, or 3 code references as arguments >>
+=item C<< Test::Mock::Cmd->import() requires a 1-3 key hash, 1 code/hash reference, or 3 code/hash references as arguments >>
 
 You are not passing in the required one or three arguments.
 

@@ -33,7 +33,7 @@ sub tmp_stdout_like_rt_72976 {
         unlink "tmp.$$.tmp";
 
         no warnings 'once';
-        open OLDOUT, '>&STDOUT' or die "Could not dup STDOUT: $!";
+        open OLDOUT, '>&STDOUT' or die "Could not dup STDOUT: $!";    ## no critic
         close STDOUT;
 
         open STDOUT, '>', "tmp.$$.tmp" or die "Could not redirect STDOUT: $!";
@@ -42,7 +42,7 @@ sub tmp_stdout_like_rt_72976 {
         # open STDOUT, '>', \$output or die "Could not redirect STDOUT: $!";
 
         $func->();
-        open STDOUT, '>&OLDOUT' or die "Could not restore STDOUT: $!";
+        open STDOUT, '>&OLDOUT' or die "Could not restore STDOUT: $!";    ## no critic
 
         open my $fh, '<', "tmp.$$.tmp" or die "Could not open temp file: $!";
         while ( my $line = <$fh> ) {

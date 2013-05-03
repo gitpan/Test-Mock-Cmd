@@ -12,6 +12,8 @@ t/01.system.t
 t/02.qx.t
 t/03.exec.t
 t/perlcritic.t
+t/perltidy.t
 t/pod-coverage.t
 t/pod.t
 META.yml                                 Module meta-data (added by MakeMaker)
+META.json                                Module JSON meta-data (added by MakeMaker)
